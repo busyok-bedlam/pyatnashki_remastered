@@ -1,12 +1,16 @@
 import { range, shuffle, random } from 'lodash';
-import Ceil from './ceil';
+import Ceil from './cell';
 import { BoardInterface } from '../interfaces/board.interface';
 import { findRow, findCol } from '../utils';
-import { Coords, CeilMetrics } from '../types/ceil';
+import { Coords, CellMetrics } from '../types/cell';
 import CanvasContext from './canvas-context';
+import GameConfig from './game-config';
+import GameConfigInstance from '../interfaces/game-config-interface';
 
 export default class Board implements BoardInterface {
   private field: Ceil[];
+
+  private readonly gameConfig: GameConfigInstance;
 
   private canvas: HTMLCanvasElement;
 
@@ -17,12 +21,15 @@ export default class Board implements BoardInterface {
     this.canvas = CanvasContext.getInstance().canvas;
     this.ctx = CanvasContext.getInstance().context;
     this.intitializeBoard();
+    this.gameConfig = GameConfig.getInstance();
   }
 
   private static generateField(): Ceil[] {
     const randomizedArray = shuffle(range(1, 17));
     const randomEmptyPoint = random(1, 15);
-    return randomizedArray.map((item, index) => new Ceil(index + 1, findCol(index + 1), findRow(index + 1), index !== randomEmptyPoint ? `${item}` : '', index + 1));
+    return randomizedArray.map(
+      (item, index) => new Ceil(index + 1, Board.calculateCellCoordsOnCanvas(findCol(index + 1)), Board.calculateCellCoordsOnCanvas(findRow(index + 1)), index !== randomEmptyPoint ? `${item}` : '', index + 1),
+    );
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -31,9 +38,10 @@ export default class Board implements BoardInterface {
   }
 
   public draw(): void {
+    const { canvasSize, canvasBorderWidth } = this.gameConfig;
     this.ctx.beginPath();
-    this.ctx.lineWidth = 4;
-    this.ctx.strokeRect(0, 0, 200, 200);
+    this.ctx.lineWidth = canvasBorderWidth;
+    this.ctx.strokeRect(0, 0, canvasSize, canvasSize);
     this.ctx.closePath();
     this.field.forEach((ceilItem) => {
       ceilItem.draw();
@@ -41,19 +49,22 @@ export default class Board implements BoardInterface {
   }
 
   private findCeilByCoords = (coords: Coords): Ceil => {
+    const { cellSize } = this.gameConfig;
     const ceilByCoords = this.field.find((ceilItem: Ceil) => {
-      const { positionX, positionY } = ceilItem.getMetrics() as CeilMetrics;
+      const { positionX, positionY } = ceilItem.getCellInfo() as CellMetrics;
       return coords.x >= positionX
-        && coords.x <= positionX + 50
+        && coords.x <= positionX + cellSize
         && coords.y >= positionY
-        && coords.y <= positionY + 50;
+        && coords.y <= positionY + cellSize;
     }) as Ceil;
     return ceilByCoords;
   };
 
   private handleOnHover = (event: MouseEvent): void => {
+    const { canvasSize } = this.gameConfig;
+
     event.preventDefault();
-    this.ctx.clearRect(0, 0, 200, 200);
+    this.ctx.clearRect(0, 0, canvasSize, canvasSize);
     this.field.forEach((ceilItem) => {
       ceilItem.unhover();
     });
@@ -66,7 +77,9 @@ export default class Board implements BoardInterface {
 
   private handleOnMouseOut = (event: MouseEvent): void => {
     event.preventDefault();
-    this.ctx.clearRect(0, 0, 200, 200);
+    const { canvasSize } = this.gameConfig;
+
+    this.ctx.clearRect(0, 0, canvasSize, canvasSize);
     this.field.forEach((ceilItem) => {
       ceilItem.unhover();
     });
@@ -85,6 +98,11 @@ export default class Board implements BoardInterface {
     this.canvas.addEventListener('mousemove', this.handleOnHover);
     this.canvas.addEventListener('mouseout', this.handleOnMouseOut);
   }
+
+  private static calculateCellCoordsOnCanvas = (orderNum: number): number => {
+    const { cellSize } = GameConfig.getInstance();
+    return (orderNum - 1) * cellSize;
+  };
 
   // private swapElements(firstCeilIndex: number, secondCeilIndex: number): Ceil[] {
   //   const tempArray = [...this.field];

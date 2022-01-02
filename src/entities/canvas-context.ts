@@ -1,16 +1,15 @@
 import { CanvasContextType } from '../types/canvas-contest';
+import GameConfig from './game-config';
 
 export default class CanvasContext {
   private static instance: CanvasContextType;
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private constructor() {}
-
   public static getInstance(): CanvasContextType {
+    const { canvasSize } = GameConfig.getInstance();
     if (!CanvasContext.instance) {
       const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-      canvas.width = 200;
-      canvas.height = 200;
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
       const context = canvas.getContext('2d') as CanvasRenderingContext2D;
       CanvasContext.instance = {
         context,
