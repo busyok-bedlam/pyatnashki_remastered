@@ -6,7 +6,8 @@
   "scripts": {
     "start": "webpack --watch",
     "lint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "build": "webpack"
   },
   "keywords": [],
   "author": "",
