@@ -43,12 +43,18 @@ export default class Cell implements CellInterface {
 
   public draw(): void {
     const {
-      cellSize, cellBorderWidth, cellColor, cellFont, cellFontColor,
+      cellSize, cellBorderWidth, cellColor, cellFont, cellFontColor, cellHoverColor,
     } = this.gameConfig;
     if (this.isHovered) {
+      const hoveredRectSize = cellSize - (cellBorderWidth * 2);
       this.ctx.beginPath();
-      this.ctx.rect(this.positionX, this.positionY, cellSize, cellSize);
-      this.ctx.fillStyle = cellColor;
+      this.ctx.rect(
+        this.positionX + cellBorderWidth,
+        this.positionY + cellBorderWidth,
+        hoveredRectSize,
+        hoveredRectSize,
+      );
+      this.ctx.fillStyle = cellHoverColor;
       this.ctx.fill();
       this.ctx.closePath();
     }
