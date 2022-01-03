@@ -12,7 +12,6 @@ export default class GameConfig {
         canvasBorderColor: '#000',
         cellColor: 'green',
         cellBorderWidth: 2,
-        canvasBorderWidth: 4,
         cellFont: 'italic 10pt Arial',
         cellHoverColor: '#c5e889',
         cellFontColor: '#000',

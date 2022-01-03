@@ -37,3 +37,13 @@ export const isNeighbour = (ceilIdFirst: number, ceilIdSecond: number) => {
   }
   return false;
 };
+
+export const ceilNum = (num: number): number => {
+  const powOfNum = num.toString().length - 1;
+  const firstNum = Number.parseInt(num.toString()[0], 10);
+  return firstNum * (10 ** powOfNum);
+};
+
+// export const calculateRestOfDigit = (num: number): number => {
+//   const ceildedNumber
+// }

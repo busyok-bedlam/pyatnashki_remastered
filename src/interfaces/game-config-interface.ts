@@ -5,7 +5,6 @@ export default interface GameConfigInstance {
   cellColor: string;
   cellBorderWidth: number;
   cellFont: string;
-  canvasBorderWidth: number;
   cellHoverColor: string;
   cellFontColor: string;
 }

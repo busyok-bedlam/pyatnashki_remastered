@@ -38,11 +38,6 @@ export default class Board implements BoardInterface {
   }
 
   public draw(): void {
-    const { canvasSize, canvasBorderWidth } = this.gameConfig;
-    this.ctx.beginPath();
-    this.ctx.lineWidth = canvasBorderWidth;
-    this.ctx.strokeRect(0, 0, canvasSize, canvasSize);
-    this.ctx.closePath();
     this.field.forEach((ceilItem) => {
       ceilItem.draw();
     });
@@ -71,7 +66,7 @@ export default class Board implements BoardInterface {
     // console.log(this.field);
     const hoveredCeilCoords = this.getCoordinatesOnBoard(event);
     const hoveredCeil = this.findCeilByCoords(hoveredCeilCoords);
-    hoveredCeil.hover();
+    hoveredCeil?.hover();
     this.draw();
   };
 
