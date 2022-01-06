@@ -5,16 +5,27 @@ export default class GameConfig {
 
   public static getInstance(): GameConfigInstance {
     if (!GameConfig.instance) {
-      const canvasSize = 500;
+      const ceilsInRow = 4;
+      const canvasSize = 600;
+      const gameGap = 30;
+      const cellBorderWidth = 4;
+      const cellSize = (canvasSize - gameGap * (ceilsInRow + 1)) / ceilsInRow;
       GameConfig.instance = {
         canvasSize,
-        cellSize: canvasSize / 4,
-        canvasBorderColor: '#000',
-        cellColor: 'green',
-        cellBorderWidth: 2,
-        cellFont: 'italic 10pt Arial',
-        cellHoverColor: '#c5e889',
-        cellFontColor: '#000',
+        cellSize,
+        color: {
+          cellColor: '#aceccb',
+          cellBorderColor: '#7460e1',
+          cellClickedBorderColor: '#000',
+          cellHoverColor: '#b0c5eb',
+          cellFontColor: '#000',
+          boardBorderColor: '#000',
+          boardBackgroundColor: '#55cce1',
+        },
+        cellBorderWidth,
+        cellFont: 'italic 20pt Arial',
+        gameGap,
+        canvasBorderWidth: 10,
       };
     }
     return GameConfig.instance;

@@ -1,5 +1,7 @@
-import { range, shuffle, random } from 'lodash';
-import Ceil from './cell';
+import {
+  range, shuffle, isEqual,
+} from 'lodash';
+import Cell from './cell';
 import { BoardInterface } from '../interfaces/board.interface';
 import { findRow, findCol } from '../utils';
 import { Coords, CellMetrics } from '../types/cell';
@@ -8,7 +10,7 @@ import GameConfig from './game-config';
 import GameConfigInstance from '../interfaces/game-config-interface';
 
 export default class Board implements BoardInterface {
-  private field: Ceil[];
+  private field: Cell[];
 
   private readonly gameConfig: GameConfigInstance;
 
@@ -16,68 +18,149 @@ export default class Board implements BoardInterface {
 
   private ctx: CanvasRenderingContext2D;
 
+  private cellsToSwap: Cell[] = [];
+
   constructor() {
     this.field = Board.generateField();
     this.canvas = CanvasContext.getInstance().canvas;
     this.ctx = CanvasContext.getInstance().context;
-    this.intitializeBoard();
+    this.subscribeToEvents();
     this.gameConfig = GameConfig.getInstance();
   }
 
-  private static generateField(): Ceil[] {
-    const randomizedArray = shuffle(range(1, 17));
-    const randomEmptyPoint = random(1, 15);
+  private static generateField(): Cell[] {
+    let randomizedArray: Array<string | number> = range(1, 16);
+    randomizedArray.push('');
+    randomizedArray = shuffle(randomizedArray);
     return randomizedArray.map(
-      (item, index) => new Ceil(index + 1, Board.calculateCellCoordsOnCanvas(findCol(index + 1)), Board.calculateCellCoordsOnCanvas(findRow(index + 1)), index !== randomEmptyPoint ? `${item}` : '', index + 1),
+      (item, index) => {
+        const { positionX, positionY } = Board.calculateCellCoordsOnCanvas(index);
+        return new Cell(
+          index + 1,
+          positionX,
+          positionY,
+          `${item}`,
+          index + 1,
+        );
+      },
     );
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  public calculate(): void {
-    // console.log('calculating');
+  private calculate(event: MouseEvent): void {
+    if (this.isVictory()) {
+      this.unsubscribeFromEvents();
+    } else if (event.type === 'mousemove') {
+      this.field.forEach((ceilItem) => {
+        ceilItem.unhover();
+      });
+      const hoveredCellCoords = this.getCoordinatesOnBoard(event);
+      const hoveredCell = this.findCeilByCoords(hoveredCellCoords);
+      hoveredCell?.hover();
+    } else if (event.type === 'mouseout') {
+      this.field.forEach((cellItem) => {
+        cellItem?.unhover();
+      });
+    } else if (event.type === 'click') {
+      this.isVictory();
+      this.field.forEach((cellItem) => {
+        cellItem?.unclick();
+      });
+      const clickedCellCoords = this.getCoordinatesOnBoard(event);
+      const clickedCell = this.findCeilByCoords(clickedCellCoords);
+      if (clickedCell) {
+        this.cellsToSwap.push(clickedCell);
+        if (this.cellsToSwap.length < 2) {
+          clickedCell.click();
+        } else if (
+          this.cellsToSwap.length === 2
+            && this.cellsToSwap.some((cellItem) => cellItem.isEmpty())
+            && Board.isCellNeighbour(this.cellsToSwap[0], this.cellsToSwap[1])
+        ) {
+          this.swapElements();
+          this.cellsToSwap = [];
+        } else {
+          this.cellsToSwap = [];
+        }
+      }
+    }
+  }
+
+  public isVictory(): boolean {
+    const victoryBoard = [1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, ''];
+    const currentBoard: Array<string | number> = this.field.map((cellItem) => {
+      const { content } = cellItem.getCellInfo();
+      // eslint-disable-next-line no-extra-boolean-cast
+      const result: string | number = !!Number.parseInt(content, 10)
+        ? Number.parseInt(content, 10) : content;
+      return result;
+    });
+    const res = isEqual(victoryBoard, currentBoard);
+    return res;
   }
 
   public draw(): void {
-    this.field.forEach((ceilItem) => {
-      ceilItem.draw();
-    });
+    const { canvasSize, color, canvasBorderWidth } = this.gameConfig;
+
+    this.ctx.beginPath();
+    this.ctx.fillStyle = color.boardBackgroundColor;
+    this.ctx.rect(0, 0, canvasSize, canvasSize);
+    this.ctx.fill();
+    this.ctx.closePath();
+    if (this.isVictory()) {
+      this.ctx.beginPath();
+      this.ctx.fillStyle = '#000';
+      this.ctx.fillText('YOU WIN', 50, 50);
+      this.ctx.closePath();
+    } else {
+      this.field.forEach((ceilItem) => {
+        ceilItem.draw();
+      });
+    }
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = color.boardBorderColor;
+    this.ctx.lineWidth = canvasBorderWidth;
+    this.ctx.strokeRect(
+      0 + canvasBorderWidth / 2,
+      0 + canvasBorderWidth / 2,
+      canvasSize - canvasBorderWidth,
+      canvasSize - canvasBorderWidth,
+    );
+    this.ctx.closePath();
   }
 
-  private findCeilByCoords = (coords: Coords): Ceil => {
+  private findCeilByCoords = (coords: Coords): Cell => {
     const { cellSize } = this.gameConfig;
-    const ceilByCoords = this.field.find((ceilItem: Ceil) => {
+    const ceilByCoords = this.field.find((ceilItem: Cell) => {
       const { positionX, positionY } = ceilItem.getCellInfo() as CellMetrics;
       return coords.x >= positionX
         && coords.x <= positionX + cellSize
         && coords.y >= positionY
         && coords.y <= positionY + cellSize;
-    }) as Ceil;
+    }) as Cell;
     return ceilByCoords;
   };
 
   private handleOnHover = (event: MouseEvent): void => {
-    const { canvasSize } = this.gameConfig;
-
     event.preventDefault();
+    const { canvasSize } = this.gameConfig;
+    this.calculate(event);
     this.ctx.clearRect(0, 0, canvasSize, canvasSize);
-    this.field.forEach((ceilItem) => {
-      ceilItem.unhover();
-    });
-    // console.log(this.field);
-    const hoveredCeilCoords = this.getCoordinatesOnBoard(event);
-    const hoveredCeil = this.findCeilByCoords(hoveredCeilCoords);
-    hoveredCeil?.hover();
     this.draw();
   };
 
   private handleOnMouseOut = (event: MouseEvent): void => {
     event.preventDefault();
     const { canvasSize } = this.gameConfig;
-
+    this.calculate(event);
     this.ctx.clearRect(0, 0, canvasSize, canvasSize);
-    this.field.forEach((ceilItem) => {
-      ceilItem.unhover();
-    });
+    this.draw();
+  };
+
+  private handleOnMouseClick = (event: MouseEvent) => {
+    event.preventDefault();
+    const { canvasSize } = this.gameConfig;
+    this.calculate(event);
+    this.ctx.clearRect(0, 0, canvasSize, canvasSize);
     this.draw();
   };
 
@@ -89,29 +172,50 @@ export default class Board implements BoardInterface {
     };
   };
 
-  private intitializeBoard(): void {
+  private subscribeToEvents = (): void => {
     this.canvas.addEventListener('mousemove', this.handleOnHover);
     this.canvas.addEventListener('mouseout', this.handleOnMouseOut);
-  }
-
-  private static calculateCellCoordsOnCanvas = (orderNum: number): number => {
-    const { cellSize } = GameConfig.getInstance();
-    return (orderNum - 1) * cellSize;
+    this.canvas.addEventListener('click', this.handleOnMouseClick);
   };
 
-  // private swapElements(firstCeilIndex: number, secondCeilIndex: number): Ceil[] {
-  //   const tempArray = [...this.field];
-  //   tempArray.push(tempArray[firstCeilIndex]);
-  //   tempArray[firstCeilIndex] = {
-  //     ...tempArray[firstCeilIndex],
-  //     orderNumber: tempArray[secondCeilIndex].orderNumber,
-  //   };
+  private unsubscribeFromEvents = (): void => {
+    this.canvas.removeEventListener('mousemove', this.handleOnHover, true);
+    this.canvas.removeEventListener('click', this.handleOnMouseClick, true);
+    this.canvas.removeEventListener('mouseout', this.handleOnMouseOut, true);
+  };
 
-  //   tempArray[secondCeilIndex] = {
-  //     ...tempArray[secondCeilIndex],
-  //     orderNumber: tempArray[tempArray.length - 1].orderNumber,
-  //   };
-  //   tempArray.pop();
-  //   return tempArray;
-  // }
+  private static calculateCellCoordsOnCanvas = (elemIndex: number): Record<'positionX' | 'positionY', number> => {
+    const { cellSize, gameGap } = GameConfig.getInstance();
+    const orderOnBoard = elemIndex + 1;
+    const orderByX = findCol(orderOnBoard);
+    const orderByY = findRow(orderOnBoard);
+    const positionX = (cellSize * (orderByX - 1)) + gameGap * orderByX;
+    const positionY = (cellSize * (orderByY - 1)) + gameGap * orderByY;
+    return { positionX, positionY };
+  };
+
+  private swapElements(): void {
+    const [
+      firstCellInfo,
+      secondCellInfo,
+    ] = this.cellsToSwap.map((cellItem) => {
+      const { id, content } = cellItem.getCellInfo();
+      return {
+        id,
+        content,
+      };
+    });
+    this.cellsToSwap[0].updateCellInfo(secondCellInfo);
+    this.cellsToSwap[1].updateCellInfo(firstCellInfo);
+  }
+
+  private static isCellNeighbour = (firstCell: Cell, secondCell: Cell): boolean => {
+    const [firstCellOrderNum, secondCellOrderNum] = [firstCell, secondCell].map((cellItem) => {
+      const { orderNum } = cellItem.getCellInfo();
+      return orderNum;
+    });
+    const isOnOneRow = findRow(firstCellOrderNum) === findRow(secondCellOrderNum);
+    const isOnOneColumn = findCol(firstCellOrderNum) === findCol(secondCellOrderNum);
+    return isOnOneRow || isOnOneColumn;
+  };
 }

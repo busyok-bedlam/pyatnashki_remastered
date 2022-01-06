@@ -1,9 +1,12 @@
-import { CellMetrics } from '../types/cell';
+import { CellMetrics, SwapMetrics } from '../types/cell';
 
 export default interface CellInterface {
   getCellInfo(): CellMetrics;
-  updateCellInfo(cellInfo: CellMetrics): void;
+  updateCellInfo(cellInfo: SwapMetrics): void;
   draw(): void;
   hover(): void;
   unhover(): void;
+  click(): void;
+  unclick(): void;
+  isEmpty(): boolean;
 }
