@@ -57,22 +57,26 @@ export default class Board implements BoardInterface {
       });
       const hoveredCellCoords = this.getCoordinatesOnBoard(event);
       const hoveredCell = this.findCeilByCoords(hoveredCellCoords);
-      if (this.cellsToSwap.length === 1) {
+      if (this.hasClickedCell()) {
         const [clickedCell] = this.cellsToSwap;
         if (this.hoveredCellToCompare !== hoveredCell) {
           this.hoveredCellToCompare = hoveredCell;
         }
-        if (
-          Board.isCellNeighbour(clickedCell, this.hoveredCellToCompare)
-          && [this.hoveredCellToCompare, clickedCell].some((cellItem) => cellItem.isEmpty())
-        ) {
-          this.hoveredCellToCompare.hover(HoveringTypes.compared);
-        } else {
-          this.hoveredCellToCompare.hover(HoveringTypes.uncompared);
+        if (this.hoveredCellToCompare !== clickedCell) {
+          if (
+            Board.isCellNeighbour(clickedCell, this.hoveredCellToCompare)
+            && [this.hoveredCellToCompare, clickedCell].some((cellItem) => cellItem.isEmpty())
+          ) {
+            this.hoveredCellToCompare.hover(HoveringTypes.compared);
+          } else {
+            this.hoveredCellToCompare.hover(HoveringTypes.uncompared);
+          }
         }
         return;
       }
-      hoveredCell?.hover(HoveringTypes.default);
+      if (!hoveredCell?.isClicked()) {
+        hoveredCell?.hover(HoveringTypes.default);
+      }
     } else if (event.type === 'mouseout') {
       this.field.forEach((cellItem) => {
         cellItem?.unhover();
@@ -123,6 +127,8 @@ export default class Board implements BoardInterface {
     const res = isEqual(victoryBoard, currentBoard);
     return res;
   }
+
+  private hasClickedCell = (): boolean => this.field.some((cellItem) => cellItem.isClicked());
 
   public draw(): void {
     const { canvasSize, color, canvasBorderWidth } = this.gameConfig;

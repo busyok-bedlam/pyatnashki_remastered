@@ -49,78 +49,137 @@ export default class Cell implements CellInterface {
   }
 
   public draw(): void {
+    this.clearCell();
+    this.drawBackground();
+    this.drawBorder();
+    this.drawText();
+  }
+
+  private clearCell = (): void => {
     const {
-      cellSize, cellBorderWidth, color, cellFont,
+      cellSize, color,
     } = this.gameConfig;
     this.ctx.beginPath();
     this.ctx.fillStyle = color.cellColor;
     this.ctx.rect(this.positionX, this.positionY, cellSize, cellSize);
     this.ctx.fill();
     this.ctx.closePath();
-    if (this.isHovered()) {
-      this.ctx.beginPath();
-      this.ctx.rect(
-        this.positionX,
-        this.positionY,
-        cellSize,
-        cellSize,
-      );
-      switch (this.hoveringType) {
-        case HoveringTypes.uncompared: {
-          this.ctx.fillStyle = color.cellUncomparedHoverColor;
-          break;
-        }
-        case HoveringTypes.compared: {
-          this.ctx.fillStyle = color.cellComparedHoverColor;
-          break;
-        }
-        default: {
-          this.ctx.fillStyle = color.cellDefaultColor;
-        }
-      }
-      this.ctx.fill();
-      this.ctx.closePath();
-    }
+  };
+
+  private drawBackground = (): void => {
+    const {
+      cellSize, color,
+    } = this.gameConfig;
     this.ctx.beginPath();
-    this.ctx.lineWidth = cellBorderWidth;
-    this.ctx.fillStyle = color.cellFontColor;
-    this.ctx.strokeStyle = this.isClicked() ? color.cellFontColor : color.cellBorderColor;
-    this.ctx.strokeRect(
-      this.positionX,
-      this.positionY,
-      cellSize,
-      cellSize,
-    );
+    switch (this.cellStatus) {
+      case CellStatuses.clicked: {
+        this.ctx.fillStyle = color.cellClickedColor;
+        break;
+      }
+      case CellStatuses.hovered: {
+        this.ctx.beginPath();
+        this.ctx.rect(
+          this.positionX,
+          this.positionY,
+          cellSize,
+          cellSize,
+        );
+        switch (this.hoveringType) {
+          case HoveringTypes.uncompared: {
+            this.ctx.fillStyle = color.cellUncomparedHoverColor;
+            break;
+          }
+          case HoveringTypes.compared: {
+            this.ctx.fillStyle = color.cellComparedHoverColor;
+            break;
+          }
+          default: {
+            this.ctx.fillStyle = color.cellHoveredColor;
+          }
+        }
+        this.ctx.fill();
+        this.ctx.closePath();
+        break;
+      }
+      default: {
+        this.ctx.strokeStyle = color.cellColor;
+      }
+    }
+    this.ctx.rect(this.positionX, this.positionY, cellSize, cellSize);
+    this.ctx.fill();
+  };
+
+  private drawText = (): void => {
+    const {
+      cellSize, cellFont,
+    } = this.gameConfig;
+    this.ctx.beginPath();
     this.ctx.font = cellFont;
+
+    this.ctx.fillStyle = '#000';
     this.ctx.fillText(
       this.content,
       this.positionX + cellSize / 2,
       this.positionY + cellSize / 2,
     );
     this.ctx.closePath();
-  }
+  };
 
-  public isHovered = (): boolean => this.hovered;
+  private drawBorder = (): void => {
+    const {
+      cellSize, cellBorderWidth, color,
+    } = this.gameConfig;
+    this.ctx.beginPath();
+    this.ctx.lineWidth = cellBorderWidth;
+    this.ctx.fillStyle = color.cellFontColor;
+    switch (this.cellStatus) {
+      case CellStatuses.clicked: {
+        this.ctx.strokeStyle = color.cellClickedBorderColor;
+        break;
+      }
+      default: {
+        this.ctx.strokeStyle = color.cellBorderColor;
+        break;
+      }
+    }
+    this.ctx.strokeRect(
+      this.positionX,
+      this.positionY,
+      cellSize,
+      cellSize,
+    );
+    this.ctx.closePath();
+  };
+
+  public isHovered = (): boolean => this.cellStatus === CellStatuses.hovered;
 
   public isEmpty = (): boolean => this.content === '';
 
-  public isClicked = (): boolean => this.clicked;
+  public isClicked = (): boolean => this.cellStatus === CellStatuses.clicked;
 
   public hover = (hoveringType: HoveringType): void => {
     this.hovered = true;
     this.hoveringType = hoveringType;
+    this.cellStatus = CellStatuses.hovered;
   };
 
   public unhover = (): void => {
     this.hovered = false;
+    if (this.cellStatus === CellStatuses.hovered) {
+      this.cellStatus = CellStatuses.default;
+    }
   };
 
   public click = (): void => {
     this.clicked = true;
+    this.cellStatus = CellStatuses.clicked;
   };
 
   public unclick(): void {
     this.clicked = false;
+    if (this.cellStatus === CellStatuses.clicked) {
+      this.cellStatus = CellStatuses.default;
+    }
   }
 
   public getCellInfo(): CellMetrics {
