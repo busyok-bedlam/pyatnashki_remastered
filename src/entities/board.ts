@@ -4,7 +4,7 @@ import {
 import Cell from './cell';
 import { BoardInterface } from '../interfaces/board.interface';
 import { findRow, findCol } from '../utils';
-import { Coords, CellMetrics } from '../types/cell';
+import { Coords, CellMetrics, HoveringTypes } from '../types/cell';
 import CanvasContext from './canvas-context';
 import GameConfig from './game-config';
 import GameConfigInstance from '../interfaces/game-config-interface';
@@ -19,6 +19,8 @@ export default class Board implements BoardInterface {
   private ctx: CanvasRenderingContext2D;
 
   private cellsToSwap: Cell[] = [];
+
+  private hoveredCellToCompare: Cell | null = null;
 
   constructor() {
     this.field = Board.generateField();
@@ -55,16 +57,40 @@ export default class Board implements BoardInterface {
       });
       const hoveredCellCoords = this.getCoordinatesOnBoard(event);
       const hoveredCell = this.findCeilByCoords(hoveredCellCoords);
-      hoveredCell?.hover();
+      if (this.cellsToSwap.length === 1) {
+        const [clickedCell] = this.cellsToSwap;
+        if (this.hoveredCellToCompare !== hoveredCell) {
+          this.hoveredCellToCompare = hoveredCell;
+        }
+        if (
+          Board.isCellNeighbour(clickedCell, this.hoveredCellToCompare)
+          && [this.hoveredCellToCompare, clickedCell].some((cellItem) => cellItem.isEmpty())
+        ) {
+          this.hoveredCellToCompare.hover(HoveringTypes.compared);
+        } else {
+          this.hoveredCellToCompare.hover(HoveringTypes.uncompared);
+        }
+        return;
+      }
+      hoveredCell?.hover(HoveringTypes.default);
     } else if (event.type === 'mouseout') {
       this.field.forEach((cellItem) => {
         cellItem?.unhover();
+        this.cellsToSwap = [];
       });
-    } else if (event.type === 'click') {
-      this.isVictory();
       this.field.forEach((cellItem) => {
         cellItem?.unclick();
       });
+    } else if (event.type === 'click') {
+      this.field.forEach((cellItem) => {
+        cellItem?.unclick();
+      });
+      this.hoveredCellToCompare = null;
+      if (this.cellsToSwap.length > 0) {
+        this.field.forEach((cellItem) => {
+          cellItem?.unhover();
+        });
+      }
       const clickedCellCoords = this.getCoordinatesOnBoard(event);
       const clickedCell = this.findCeilByCoords(clickedCellCoords);
       if (clickedCell) {
@@ -216,6 +242,17 @@ export default class Board implements BoardInterface {
     });
     const isOnOneRow = findRow(firstCellOrderNum) === findRow(secondCellOrderNum);
     const isOnOneColumn = findCol(firstCellOrderNum) === findCol(secondCellOrderNum);
-    return isOnOneRow || isOnOneColumn;
+    if (isOnOneRow) {
+      const diffBetweenRowIndexes = Math.abs(
+        findCol(firstCellOrderNum) - findCol(secondCellOrderNum),
+      );
+      return diffBetweenRowIndexes === 1;
+    } if (isOnOneColumn) {
+      const diffBetweenColumnIndexes = Math.abs(
+        findRow(firstCellOrderNum) - findRow(secondCellOrderNum),
+      );
+      return diffBetweenColumnIndexes === 1;
+    }
+    return false;
   };
 }

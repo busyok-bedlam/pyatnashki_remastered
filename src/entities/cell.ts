@@ -1,5 +1,7 @@
 import CanvasContext from './canvas-context';
-import { CellMetrics, SwapMetrics } from '../types/cell';
+import {
+  CellMetrics, CellStatus, CellStatuses, HoveringType, HoveringTypes, SwapMetrics,
+} from '../types/cell';
 import CellInterface from '../interfaces/cell.interface';
 import GameConfig from './game-config';
 import GameConfigInstance from '../interfaces/game-config-interface';
@@ -17,13 +19,17 @@ export default class Cell implements CellInterface {
 
   private ctx: CanvasRenderingContext2D;
 
-  private isHovered = false;
+  private cellStatus: CellStatus = CellStatuses.default;
+
+  private hovered = false;
 
   private padding = 10;
 
   private gameConfig: GameConfigInstance;
 
-  private isClicked = false;
+  private clicked = false;
+
+  private hoveringType: HoveringType = 'default';
 
   constructor(
     id: number,
@@ -51,7 +57,7 @@ export default class Cell implements CellInterface {
     this.ctx.rect(this.positionX, this.positionY, cellSize, cellSize);
     this.ctx.fill();
     this.ctx.closePath();
-    if (this.isHovered) {
+    if (this.isHovered()) {
       this.ctx.beginPath();
       this.ctx.rect(
         this.positionX,
@@ -59,14 +65,26 @@ export default class Cell implements CellInterface {
         cellSize,
         cellSize,
       );
-      this.ctx.fillStyle = color.cellHoverColor;
+      switch (this.hoveringType) {
+        case HoveringTypes.uncompared: {
+          this.ctx.fillStyle = color.cellUncomparedHoverColor;
+          break;
+        }
+        case HoveringTypes.compared: {
+          this.ctx.fillStyle = color.cellComparedHoverColor;
+          break;
+        }
+        default: {
+          this.ctx.fillStyle = color.cellDefaultColor;
+        }
+      }
       this.ctx.fill();
       this.ctx.closePath();
     }
     this.ctx.beginPath();
     this.ctx.lineWidth = cellBorderWidth;
     this.ctx.fillStyle = color.cellFontColor;
-    this.ctx.strokeStyle = this.isClicked ? color.cellFontColor : color.cellBorderColor;
+    this.ctx.strokeStyle = this.isClicked() ? color.cellFontColor : color.cellBorderColor;
     this.ctx.strokeRect(
       this.positionX,
       this.positionY,
@@ -82,24 +100,27 @@ export default class Cell implements CellInterface {
     this.ctx.closePath();
   }
 
-  public isEmpty(): boolean {
-    return this.content === '';
-  }
+  public isHovered = (): boolean => this.hovered;
 
-  public hover(): void {
-    this.isHovered = true;
-  }
+  public isEmpty = (): boolean => this.content === '';
 
-  public unhover(): void {
-    this.isHovered = false;
-  }
+  public isClicked = (): boolean => this.clicked;
 
-  public click(): void {
-    this.isClicked = true;
-  }
+  public hover = (hoveringType: HoveringType): void => {
+    this.hovered = true;
+    this.hoveringType = hoveringType;
+  };
+
+  public unhover = (): void => {
+    this.hovered = false;
+  };
+
+  public click = (): void => {
+    this.clicked = true;
+  };
 
   public unclick(): void {
-    this.isClicked = false;
+    this.clicked = false;
   }
 
   public getCellInfo(): CellMetrics {
