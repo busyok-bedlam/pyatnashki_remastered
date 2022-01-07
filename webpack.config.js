@@ -1,10 +1,11 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-module.exports = {
+const webConfig = {
   entry: './src/index.ts',
+  target: 'electron-renderer',
   devtool: 'inline-source-map',
-  mode: 'none',
+  mode: 'development',
   module: {
     rules: [
       {
@@ -33,3 +34,21 @@ module.exports = {
     }),
   ],
 };
+
+const electronConfig = {
+  mode: 'development',
+  entry: './src/electron.ts',
+  target: 'electron-main',
+  module: {
+    rules: [{
+      test: /\.ts$/,
+      use: 'ts-loader',
+    }],
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'electron.js',
+  },
+};
+
+module.exports = [webConfig, electronConfig];

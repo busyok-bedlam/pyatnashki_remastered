@@ -4,10 +4,21 @@
   "description": "",
   "main": "webpack.config.js",
   "scripts": {
-    "start": "webpack --watch",
+    "start": "npm run build && electron ./dist/electron.js",
+    "start:dev": "webpack --watch",
     "lint": "eslint . --ext .ts",
     "test": "jest",
-    "build": "webpack"
+    "build": "webpack --config ./webpack.config.js",
+    "electron-build": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "your.id",
+    "asar": false,
+    "mac": {
+      "category": "your.app.category.type"
+    }
   },
   "keywords": [],
   "author": "",
@@ -17,6 +28,9 @@
     "@typescript-eslint/eslint-plugin": "^5.8.0",
     "@typescript-eslint/parser": "^5.8.0",
     "css-loader": "^6.5.1",
+    "electron": "^16.0.6",
+    "electron-builder": "^22.14.5",
+    "electron-packager": "^15.4.0",
     "eslint": "^8.5.0",
     "eslint-config-airbnb-typescript": "^16.1.0",
     "eslint-plugin-import": "^2.25.3",
@@ -31,6 +45,7 @@
   },
   "dependencies": {
     "@types/lodash": "^4.14.178",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "path-browserify": "^1.0.1"
   }
 }
