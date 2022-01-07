@@ -2,23 +2,32 @@
   "name": "pyatnashki",
   "version": "1.0.0",
   "description": "",
-  "main": "webpack.config.js",
+  "main": "dist/electron.js",
   "scripts": {
     "start": "npm run build && electron ./dist/electron.js",
     "start:dev": "webpack --watch",
     "lint": "eslint . --ext .ts",
     "test": "jest",
     "build": "webpack --config ./webpack.config.js",
-    "electron-build": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds",
+    "electron-build1": "electron-packager . myApp --platform=darwin --arch=x64 --out=dist --ignore=dist --prune",
+    "electron-build2": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
   "build": {
-    "appId": "your.id",
-    "asar": false,
-    "mac": {
-      "category": "your.app.category.type"
-    }
+    "appId": "com.example.electron-boilerplate",
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "resources"
+    },
+    "extraFiles": [
+      "credentials"
+    ],
+    "publish": null
   },
   "keywords": [],
   "author": "",
@@ -34,16 +43,16 @@
     "eslint": "^8.5.0",
     "eslint-config-airbnb-typescript": "^16.1.0",
     "eslint-plugin-import": "^2.25.3",
-    "html-webpack-plugin": "^5.5.0",
     "jest": "^27.4.5",
     "style-loader": "^3.3.1",
     "ts-jest": "^27.1.2",
     "ts-loader": "^9.2.6",
     "typescript": "^4.5.4",
-    "webpack": "^5.65.0",
     "webpack-cli": "^4.9.1"
   },
   "dependencies": {
+    "webpack": "^5.65.0",
+    "html-webpack-plugin": "^5.5.0",
     "@types/lodash": "^4.14.178",
     "lodash": "^4.17.21",
     "path-browserify": "^1.0.1"
