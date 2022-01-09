@@ -2,6 +2,7 @@ import { CellMetrics, HoveringType, SwapMetrics } from '../types/cell';
 
 export default interface CellInterface {
   getCellInfo(): CellMetrics;
+  getOrderNum(): number;
   updateCellInfo(cellInfo: SwapMetrics): void;
   draw(): void;
   hover(hoveringType: HoveringType): void;

@@ -102,7 +102,7 @@ export default class Cell implements CellInterface {
         break;
       }
       default: {
-        this.ctx.strokeStyle = color.cellColor;
+        // Do nothing
       }
     }
     this.ctx.rect(this.positionX, this.positionY, cellSize, cellSize);
@@ -162,15 +162,17 @@ export default class Cell implements CellInterface {
     } = this.gameConfig;
     this.ctx.beginPath();
     this.ctx.lineWidth = cellBorderWidth;
-    this.ctx.fillStyle = color.cellFontColor;
     switch (this.cellStatus) {
       case CellStatuses.clicked: {
         this.ctx.strokeStyle = color.cellClickedBorderColor;
         break;
       }
       default: {
-        this.ctx.strokeStyle = color.cellBorderColor;
-        break;
+        if (this.content) {
+          this.ctx.strokeStyle = color.cellBorderColor;
+        } else {
+          this.ctx.strokeStyle = color.emptyCellBorderColor;
+        }
       }
     }
     this.ctx.strokeRect(
@@ -221,6 +223,10 @@ export default class Cell implements CellInterface {
       id: this.id,
       orderNum: this.orderNumber,
     };
+  }
+
+  public getOrderNum(): number {
+    return this.orderNumber;
   }
 
   public updateCellInfo(cellInfo: SwapMetrics): void {

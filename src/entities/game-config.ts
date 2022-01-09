@@ -17,6 +17,7 @@ export default class GameConfig {
         color: {
           cellColor: '#aceccb',
           cellBorderColor: '#7460e1',
+          emptyCellBorderColor: '#fdff0c',
           cellClickedBorderColor: '#000',
           cellClickedColor: '#f6930e',
           cellHoveredColor: '#b0c5eb',

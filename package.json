@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/electron.js",
   "scripts": {
-    "start": "npm run build:dev && electron ./dist/electron.js",
+    "start": "npm run build:dev && electron ./dist/electron.js --serve",
     "start:dev": "webpack --mode development --watch",
     "lint": "eslint . --ext .ts",
     "test": "jest",
@@ -49,10 +49,10 @@
     "webpack-cli": "^4.9.1"
   },
   "dependencies": {
-    "webpack": "^5.65.0",
-    "html-webpack-plugin": "^5.5.0",
     "@types/lodash": "^4.14.178",
+    "html-webpack-plugin": "^5.5.0",
     "lodash": "^4.17.21",
-    "path-browserify": "^1.0.1"
+    "path-browserify": "^1.0.1",
+    "webpack": "^5.65.0"
   }
 }

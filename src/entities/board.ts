@@ -1,3 +1,4 @@
+/* eslint-disable no-debugger */
 import {
   range, shuffle, isEqual,
 } from 'lodash';
@@ -8,6 +9,7 @@ import { Coords, CellMetrics, HoveringTypes } from '../types/cell';
 import CanvasContext from './canvas-context';
 import GameConfig from './game-config';
 import GameConfigInstance from '../interfaces/game-config-interface';
+import { GameEvents, KeyboardMoveCodes } from '../types/event-types';
 
 export default class Board implements BoardInterface {
   private field: Cell[];
@@ -48,68 +50,140 @@ export default class Board implements BoardInterface {
     );
   }
 
-  private calculate(event: MouseEvent): void {
+  private calculate(event: MouseEvent | KeyboardEvent): void {
     if (this.isVictory()) {
       this.unsubscribeFromEvents();
-    } else if (event.type === 'mousemove') {
-      this.field.forEach((ceilItem) => {
-        ceilItem.unhover();
-      });
-      const hoveredCellCoords = this.getCoordinatesOnBoard(event);
-      const hoveredCell = this.findCeilByCoords(hoveredCellCoords);
-      if (this.hasClickedCell()) {
-        const [clickedCell] = this.cellsToSwap;
-        if (this.hoveredCellToCompare !== hoveredCell) {
-          this.hoveredCellToCompare = hoveredCell;
-        }
-        if (this.hoveredCellToCompare !== clickedCell) {
-          if (
-            Board.isCellNeighbour(clickedCell, this.hoveredCellToCompare)
-            && [this.hoveredCellToCompare, clickedCell].some((cellItem) => cellItem.isEmpty())
-          ) {
-            this.hoveredCellToCompare.hover(HoveringTypes.compared);
-          } else {
-            this.hoveredCellToCompare.hover(HoveringTypes.uncompared);
+    } else {
+      switch (event.type) {
+        case GameEvents.click: {
+          this.field.forEach((cellItem) => {
+            cellItem?.unclick();
+          });
+          this.hoveredCellToCompare = null;
+          if (this.cellsToSwap.length > 0) {
+            this.field.forEach((cellItem) => {
+              cellItem?.unhover();
+            });
           }
+          const clickedCellCoords = this.getCoordinatesOnBoard(event as MouseEvent);
+          const clickedCell = this.findCeilByCoords(clickedCellCoords);
+          if (clickedCell) {
+            this.cellsToSwap.push(clickedCell);
+            if (this.cellsToSwap.length < 2) {
+              clickedCell.click();
+            } else if (
+              this.cellsToSwap.length === 2
+                && this.cellsToSwap.some((cellItem) => cellItem.isEmpty())
+                && Board.isCellNeighbour(this.cellsToSwap[0], this.cellsToSwap[1])
+            ) {
+              this.swapElements();
+              this.cellsToSwap = [];
+            } else {
+              this.cellsToSwap = [];
+            }
+          }
+          break;
         }
-        return;
-      }
-      if (!hoveredCell?.isClicked()) {
-        hoveredCell?.hover(HoveringTypes.default);
-      }
-    } else if (event.type === 'mouseout') {
-      this.field.forEach((cellItem) => {
-        cellItem?.unhover();
-        this.cellsToSwap = [];
-      });
-      this.field.forEach((cellItem) => {
-        cellItem?.unclick();
-      });
-    } else if (event.type === 'click') {
-      this.field.forEach((cellItem) => {
-        cellItem?.unclick();
-      });
-      this.hoveredCellToCompare = null;
-      if (this.cellsToSwap.length > 0) {
-        this.field.forEach((cellItem) => {
-          cellItem?.unhover();
-        });
-      }
-      const clickedCellCoords = this.getCoordinatesOnBoard(event);
-      const clickedCell = this.findCeilByCoords(clickedCellCoords);
-      if (clickedCell) {
-        this.cellsToSwap.push(clickedCell);
-        if (this.cellsToSwap.length < 2) {
-          clickedCell.click();
-        } else if (
-          this.cellsToSwap.length === 2
-            && this.cellsToSwap.some((cellItem) => cellItem.isEmpty())
-            && Board.isCellNeighbour(this.cellsToSwap[0], this.cellsToSwap[1])
-        ) {
-          this.swapElements();
+        case GameEvents.mousemove: {
+          this.field.forEach((ceilItem) => {
+            ceilItem.unhover();
+          });
+          const hoveredCellCoords = this.getCoordinatesOnBoard(event as MouseEvent);
+          const hoveredCell = this.findCeilByCoords(hoveredCellCoords);
+          if (this.hasClickedCell() && hoveredCell) {
+            const [clickedCell] = this.cellsToSwap;
+            if (this.hoveredCellToCompare !== hoveredCell) {
+              this.hoveredCellToCompare = hoveredCell;
+            }
+            if (this.hoveredCellToCompare !== clickedCell) {
+              if (
+                Board.isCellNeighbour(clickedCell, this.hoveredCellToCompare)
+                && [this.hoveredCellToCompare, clickedCell].some((cellItem) => cellItem.isEmpty())
+              ) {
+                this.hoveredCellToCompare.hover(HoveringTypes.compared);
+              } else {
+                this.hoveredCellToCompare.hover(HoveringTypes.uncompared);
+              }
+            }
+            return;
+          }
+          if (!hoveredCell?.isClicked()) {
+            hoveredCell?.hover(HoveringTypes.default);
+          }
+          break;
+        }
+        case GameEvents.mouseout: {
+          this.field.forEach((cellItem) => {
+            cellItem?.unhover();
+            this.cellsToSwap = [];
+          });
+          this.field.forEach((cellItem) => {
+            cellItem?.unclick();
+          });
+          break;
+        }
+        case GameEvents.keydown: {
           this.cellsToSwap = [];
-        } else {
+          this.field.forEach((cellItem) => cellItem.unclick());
+          this.field.forEach((cellItem) => cellItem.unhover());
+          const emptyCell = this.field.find((cellItem) => cellItem.isEmpty()) as Cell;
+          const emptyCellOrderNum = emptyCell.getOrderNum();
+          let cellToSwap: Cell;
+          const { code: keyCode } = event as KeyboardEvent;
+          switch (keyCode) {
+            case KeyboardMoveCodes.right: {
+              if (findRow(emptyCellOrderNum) < 4) {
+                const cellToSwapOrderNum = emptyCellOrderNum + 4;
+                cellToSwap = this.field.find(
+                  (cellItem) => cellItem.getOrderNum() === cellToSwapOrderNum,
+                ) as Cell;
+                this.cellsToSwap.push(emptyCell, cellToSwap);
+                this.swapElements();
+              }
+              break;
+            }
+            case KeyboardMoveCodes.left: {
+              if (findRow(emptyCellOrderNum) > 1) {
+                const cellToSwapOrderNum = emptyCellOrderNum - 4;
+                cellToSwap = this.field.find(
+                  (cellItem) => cellItem.getOrderNum() === cellToSwapOrderNum,
+                ) as Cell;
+                this.cellsToSwap.push(emptyCell, cellToSwap);
+                this.swapElements();
+              }
+              break;
+            }
+            case KeyboardMoveCodes.up: {
+              if (findCol(emptyCellOrderNum) > 1) {
+                const cellToSwapOrderNum = emptyCellOrderNum - 1;
+                cellToSwap = this.field.find(
+                  (cellItem) => cellItem.getOrderNum() === cellToSwapOrderNum,
+                ) as Cell;
+                this.cellsToSwap.push(emptyCell, cellToSwap);
+                this.swapElements();
+              }
+              break;
+            }
+            case KeyboardMoveCodes.down: {
+              if (findCol(emptyCellOrderNum) < 4) {
+                const cellToSwapOrderNum = emptyCellOrderNum + 1;
+                cellToSwap = this.field.find(
+                  (cellItem) => cellItem.getOrderNum() === cellToSwapOrderNum,
+                ) as Cell;
+                this.cellsToSwap.push(emptyCell, cellToSwap);
+                this.swapElements();
+              }
+              break;
+            }
+            default: {
+              // Do nothing
+            }
+          }
           this.cellsToSwap = [];
+          break;
+        }
+        default: {
+          // Do nothing
         }
       }
     }
@@ -133,10 +207,7 @@ export default class Board implements BoardInterface {
   public draw(): void {
     const { canvasSize, color, canvasBorderWidth } = this.gameConfig;
 
-    this.ctx.beginPath();
-    this.ctx.fillStyle = color.boardBackgroundColor;
-    this.ctx.rect(0, 0, canvasSize, canvasSize);
-    this.ctx.fill();
+    this.clearBoard();
     this.ctx.closePath();
     if (this.isVictory()) {
       this.ctx.beginPath();
@@ -160,6 +231,13 @@ export default class Board implements BoardInterface {
     this.ctx.closePath();
   }
 
+  private clearBoard = (): void => {
+    const { canvasSize, color } = this.gameConfig;
+    this.ctx.fillStyle = color.boardBackgroundColor;
+    this.ctx.rect(0, 0, canvasSize, canvasSize);
+    this.ctx.fill();
+  };
+
   private findCeilByCoords = (coords: Coords): Cell => {
     const { cellSize } = this.gameConfig;
     const ceilByCoords = this.field.find((ceilItem: Cell) => {
@@ -174,25 +252,25 @@ export default class Board implements BoardInterface {
 
   private handleOnHover = (event: MouseEvent): void => {
     event.preventDefault();
-    const { canvasSize } = this.gameConfig;
     this.calculate(event);
-    this.ctx.clearRect(0, 0, canvasSize, canvasSize);
     this.draw();
   };
 
   private handleOnMouseOut = (event: MouseEvent): void => {
     event.preventDefault();
-    const { canvasSize } = this.gameConfig;
     this.calculate(event);
-    this.ctx.clearRect(0, 0, canvasSize, canvasSize);
     this.draw();
   };
 
-  private handleOnMouseClick = (event: MouseEvent) => {
+  private handleOnMouseClick = (event: MouseEvent): void => {
     event.preventDefault();
-    const { canvasSize } = this.gameConfig;
     this.calculate(event);
-    this.ctx.clearRect(0, 0, canvasSize, canvasSize);
+    this.draw();
+  };
+
+  private handleOnKeyDown = (event: KeyboardEvent) => {
+    // event.preventDefault();
+    this.calculate(event);
     this.draw();
   };
 
@@ -208,6 +286,7 @@ export default class Board implements BoardInterface {
     this.canvas.addEventListener('mousemove', this.handleOnHover);
     this.canvas.addEventListener('mouseout', this.handleOnMouseOut);
     this.canvas.addEventListener('click', this.handleOnMouseClick);
+    document.addEventListener('keydown', this.handleOnKeyDown);
   };
 
   private unsubscribeFromEvents = (): void => {
