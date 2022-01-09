@@ -10,6 +10,7 @@ export default class GameConfig {
       const gameGap = 30;
       const cellBorderWidth = 4;
       const cellSize = (canvasSize - gameGap * (ceilsInRow + 1)) / ceilsInRow;
+      const cellFontSize = 15;
       GameConfig.instance = {
         canvasSize,
         cellSize,
@@ -19,14 +20,15 @@ export default class GameConfig {
           cellClickedBorderColor: '#000',
           cellClickedColor: '#f6930e',
           cellHoveredColor: '#b0c5eb',
-          cellComparedHoverColor: '#7eff0a',
-          cellUncomparedHoverColor: '#e74121',
+          cellComparedHoverColor: '#7bdc10',
+          cellUncomparedHoverColor: '#ec5616',
           cellFontColor: '#000',
           boardBorderColor: '#000',
           boardBackgroundColor: '#55cce1',
         },
         cellBorderWidth,
-        cellFont: 'italic 20pt Arial',
+        cellFont: `italic ${cellFontSize}pt Arial`,
+        cellFontSize,
         gameGap,
         canvasBorderWidth: 10,
       };

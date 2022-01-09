@@ -4,15 +4,14 @@
   "description": "",
   "main": "dist/electron.js",
   "scripts": {
-    "start": "npm run build && electron ./dist/electron.js",
-    "start:dev": "webpack --watch",
+    "start": "npm run build:dev && electron ./dist/electron.js",
+    "start:dev": "webpack --mode development --watch",
     "lint": "eslint . --ext .ts",
     "test": "jest",
-    "build": "webpack --config ./webpack.config.js",
-    "electron-build1": "electron-packager . myApp --platform=darwin --arch=x64 --out=dist --ignore=dist --prune",
-    "electron-build2": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "build:dev": "webpack --mode development --config ./webpack.config.js",
+    "build:prod": "webpack --mode production --config ./webpack.config.js",
+    "pack": "npm run build:prod && electron-builder --dir",
+    "dist": "npm run build:prod && electron-builder"
   },
   "build": {
     "appId": "com.example.electron-boilerplate",
@@ -39,7 +38,6 @@
     "css-loader": "^6.5.1",
     "electron": "^16.0.6",
     "electron-builder": "^22.14.5",
-    "electron-packager": "^15.4.0",
     "eslint": "^8.5.0",
     "eslint-config-airbnb-typescript": "^16.1.0",
     "eslint-plugin-import": "^2.25.3",

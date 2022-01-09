@@ -111,16 +111,47 @@ export default class Cell implements CellInterface {
 
   private drawText = (): void => {
     const {
-      cellSize, cellFont,
+      cellSize, cellFont, cellFontSize, color,
     } = this.gameConfig;
+    if (this.content) {
+    // Drawing text arc begin
+      this.ctx.beginPath();
+      this.ctx.arc(
+        this.positionX + cellSize / 2,
+        this.positionY + cellSize / 2,
+        cellSize / 4,
+        0,
+        2 * Math.PI,
+      );
+      this.ctx.fillStyle = '#ebf4d5';
+      this.ctx.fill();
+      this.ctx.closePath();
+      this.ctx.beginPath();
+      this.ctx.arc(
+        this.positionX + cellSize / 2,
+        this.positionY + cellSize / 2,
+        cellSize / 4,
+        0,
+        2 * Math.PI,
+      );
+      this.ctx.strokeStyle = color.cellClickedBorderColor;
+      this.ctx.lineWidth = 1;
+      this.ctx.stroke();
+      this.ctx.closePath();
+    }
+
+    // Drawing text begin
     this.ctx.beginPath();
     this.ctx.font = cellFont;
-
-    this.ctx.fillStyle = '#000';
+    this.ctx.fillStyle = color.cellFontColor;
+    const textIndentX = this.content.toString().length > 1
+      ? this.positionX + cellSize / 2 - cellFontSize * 0.75
+      : this.positionX + cellSize / 2 - cellFontSize * 0.5;
+    const textIndentY = this.positionY + cellSize / 2 + cellFontSize * 0.25;
     this.ctx.fillText(
       this.content,
-      this.positionX + cellSize / 2,
-      this.positionY + cellSize / 2,
+      textIndentX,
+      textIndentY,
     );
     this.ctx.closePath();
   };

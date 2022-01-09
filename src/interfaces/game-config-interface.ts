@@ -3,6 +3,7 @@ export default interface GameConfigInstance {
   cellSize: number;
   cellBorderWidth: number;
   cellFont: string;
+  cellFontSize: number;
   gameGap: number;
   color: Record<string, string>;
   canvasBorderWidth: number;
