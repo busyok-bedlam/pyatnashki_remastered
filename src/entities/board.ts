@@ -10,6 +10,7 @@ import CanvasContext from './canvas-context';
 import GameConfig from './game-config';
 import GameConfigInstance from '../interfaces/game-config-interface';
 import { GameEvents, KeyboardMoveCodes } from '../types/event-types';
+import SoundManager from './sound-manager';
 
 export default class Board implements BoardInterface {
   private field: Cell[];
@@ -272,6 +273,8 @@ export default class Board implements BoardInterface {
     // event.preventDefault();
     this.calculate(event);
     this.draw();
+    // const sound = SoundManager.getInstance();
+    // sound.playStepSound();
   };
 
   private getCoordinatesOnBoard = (event: MouseEvent): Coords => {
